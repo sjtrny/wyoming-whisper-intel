@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  wyoming-whisper:
+    image: ghcr.io/sjtrny/wyoming-whisper-intel:release
+    # Local build
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
+    # Map ONLY the discrete GPU render node:
+    # Replace renderD129 with your actual node. To discover:
+    #   readlink -f /dev/dri/by-path/pci-0000:04:00.0-render
+    devices:
+      - "/dev/dri/renderD129:/dev/dri/renderD129:rwm"
+
+    # Add the host's 'render' group (numeric GID) so the process can open /dev/dri/*
+    # On host: getent group render | cut -d: -f3
+    group_add:
+      - "108"    # <-- replace with your host's render GID
+
+    # Expose only Wyoming
+    ports:
+      - "7891:7891"
+
+    # Persist models on the host (optional, but recommended)
+    volumes:
+      - ./models:/models
+
+    environment:
+      # Intel GPU selection
+      ONEAPI_DEVICE_SELECTOR: "level_zero:gpu"
+      ZE_ENABLE_PCI_ID_DEVICE_ORDER: "1"
+
+      # Whisper config
+      WHISPER_MODEL: "small"          # e.g., small | medium | large-v2 | large-v3
+      WHISPER_LANG: "en"
+      WHISPER_BEAM_SIZE: "5"
+      WHISPER_HTTP_HOST: "127.0.0.1"  # keep internal
+      WHISPER_HTTP_PORT: "8910"
+
+      # Wyoming bind address/port
+      WYOMING_URI: "tcp://0.0.0.0:7891"
+
+      # Optional: change where models are fetched from
+      # MODEL_BASE_URL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main"
+
+    restart: unless-stopped
