@@ -53,8 +53,12 @@ ENV ONEAPI_DEVICE_SELECTOR=level_zero:gpu \
 # Only expose Wyoming port; whisper HTTP stays internal
 EXPOSE 7891
 
-# Optional: healthcheck via whisper's internal /describe
 HEALTHCHECK --start-period=60s --interval=30s --timeout=5s --retries=5 \
-  CMD curl -fsS "http://${WHISPER_HTTP_HOST}:${WHISPER_HTTP_PORT}/" >/dev/null || exit 1
+  CMD sh -lc '\
+    url="http://${WHISPER_HTTP_HOST}:${WHISPER_HTTP_PORT}/"; \
+    printf "HC url=%s ... " "$url" >&2; \
+    code=$(curl -sS -o /dev/null -w "%{http_code}" "$url" || echo 000); \
+    echo "status=$code" >&2; \
+    [ "$code" != 000 ] && [ "$code" -lt 500 ] || exit 1'
 
 CMD ["/usr/local/bin/start.sh"]
