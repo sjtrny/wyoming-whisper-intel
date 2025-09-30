@@ -55,6 +55,6 @@ EXPOSE 7891
 
 # Optional: healthcheck via whisper's internal /describe
 HEALTHCHECK --start-period=60s --interval=30s --timeout=5s --retries=5 \
-  CMD curl -fsS "http://${WHISPER_HTTP_HOST}:${WHISPER_HTTP_PORT}/describe" >/dev/null || exit 1
+  CMD curl -fsS "http://${WHISPER_HTTP_HOST}:${WHISPER_HTTP_PORT}/" >/dev/null || exit 1
 
 CMD ["/usr/local/bin/start.sh"]
