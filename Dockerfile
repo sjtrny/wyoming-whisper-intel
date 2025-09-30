@@ -54,9 +54,11 @@ ENV ONEAPI_DEVICE_SELECTOR=level_zero:gpu \
 EXPOSE 7891
 
 HEALTHCHECK --start-period=60s --interval=30s --timeout=5s --retries=5 \
-  CMD sh -c '\
-    url="http://${WHISPER_HTTP_HOST:-127.0.0.1}:${WHISPER_HTTP_PORT:-8910}/"; \
-    echo "Running healthcheck: curl -s -o - \"$url\" -w \"status=%{http_code}\""; \
-    curl -s -o - "$url" -w "\nstatus=%{http_code}\n" || exit 1'
+  CMD sh -lc '\
+    url="http://${WHISPER_HTTP_HOST}:${WHISPER_HTTP_PORT}/"; \
+    printf "HC url=%s ... " "$url" >&2; \
+    code=$(curl -sS -o /dev/null -w "%{http_code}" "$url" || echo 000); \
+    echo "status=$code" >&2; \
+    [ "$code" != 000 ] && [ "$code" -lt 500 ] || exit 1'
 
 CMD ["/usr/local/bin/start.sh"]
